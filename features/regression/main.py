@@ -81,6 +81,9 @@ def _load():
         predict=predict,
         movies=movies,
         ratings=ratings,
+        user_mean_dict=user_mean_dict,
+        user_count_dict=user_count_dict,
+        global_mean=global_mean,
         valid_users=sorted(ratings["userId"].unique().tolist()),
         valid_movies=sorted(ratings["movieId"].unique().tolist()),
         loaded_at=_pkl_mtime(),
@@ -145,4 +148,6 @@ def predict_rating(
         "model":            model,
         "predicted_rating": round(predicted, 2),
         "actual_rating":    actual,
+        "user_avg_rating":  round(state["user_mean_dict"].get(user_id, state["global_mean"]), 2),
+        "user_rating_count": int(state["user_count_dict"].get(user_id, 0)),
     }
