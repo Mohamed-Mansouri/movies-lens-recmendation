@@ -36,23 +36,11 @@
   header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
   header span { color: var(--muted); font-size: 0.9rem; }
 
-  .layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-  .main-area {
-    flex: 1;
-    padding: 32px;
-    overflow-y: auto;
-  }
-  .panel {
-    width: 0;
-    overflow: hidden;
-    transition: width 0.3s ease;
-    background: var(--surface);
-    border-left: 1px solid var(--border);
-  }
+  .layout { display: flex; flex: 1; overflow: hidden; }
+  .main-area { flex: 1; padding: 28px 32px; overflow-y: auto; }
+
+  /* panel */
+  .panel { width: 0; overflow: hidden; transition: width 0.3s ease; background: var(--surface); border-left: 1px solid var(--border); }
   .panel.open { width: 380px; }
   .panel-inner { padding: 24px; width: 380px; }
   .panel h2 { font-size: 1rem; color: var(--accent); margin-bottom: 16px; }
@@ -60,171 +48,72 @@
   .panel p, .panel li { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
   .panel ul { padding-left: 16px; }
   .panel code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 0.78rem; color: var(--accent2); }
-  .panel-toggle {
-    position: fixed;
-    top: 22px;
-    right: 20px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.82rem;
-    transition: color 0.2s, border-color 0.2s;
-    z-index: 100;
-  }
+  .panel-toggle { position: fixed; top: 22px; right: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: color .2s, border-color .2s; z-index: 100; }
   .panel-toggle:hover { color: var(--text); border-color: var(--accent); }
 
-  .controls {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    display: flex;
-    gap: 16px;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    margin-bottom: 28px;
-  }
+  /* controls */
+  .controls { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 24px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
-  label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  input, select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 0.92rem;
-    outline: none;
-    min-width: 140px;
-    transition: border-color 0.2s;
-  }
+  label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  input, select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.92rem; outline: none; min-width: 140px; transition: border-color .2s; }
   input:focus, select:focus { border-color: var(--accent); }
-  button {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-size: 0.92rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  button:hover { opacity: 0.85; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+  button.primary:hover { opacity: .85; }
+  button.primary:disabled { opacity: .4; cursor: not-allowed; }
 
-  #error {
-    background: #2d1a1a;
-    border: 1px solid #c0392b;
-    color: #e74c3c;
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 0.88rem;
-    display: none;
-  }
+  #error { background: #2d1a1a; border: 1px solid #c0392b; color: #e74c3c; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: .88rem; display: none; }
+  .loading { display: none; color: var(--muted); font-size: .9rem; padding: 8px 0; }
 
-  /* ---- Result layout ---- */
-  .result-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  @media (max-width: 700px) { .result-grid { grid-template-columns: 1fr; } }
+  /* ─── layout grid ─── */
+  .result-area { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .result-area.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 900px) { .result-area, .result-area.three { grid-template-columns: 1fr; } }
 
-  .cluster-card {
-    background: var(--surface);
-    border: 2px solid var(--accent);
-    border-radius: 14px;
-    padding: 24px;
-  }
-  .cluster-card .tag {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    margin-bottom: 6px;
-  }
-  .cluster-card .cluster-name {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-  .cluster-card.noise .cluster-name { color: var(--noise); }
-  .cluster-card .cluster-size {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.88rem;
-  }
+  /* ─── cluster card ─── */
+  .cluster-card { background: var(--surface); border: 2px solid var(--accent); border-radius: 14px; padding: 22px; }
+  .cluster-card.noise { border-color: var(--noise); }
+  .card-tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-bottom: 6px; }
+  .cluster-name { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+  .cluster-size { font-size: .85rem; color: var(--muted); margin-bottom: 14px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
   .stat-row:last-child { border-bottom: none; }
-  .stat-row .label { color: var(--muted); }
-  .stat-row .value { color: var(--text); font-weight: 600; }
+  .stat-row .lbl { color: var(--muted); }
+  .stat-row .val { color: var(--text); font-weight: 600; }
+  .genres-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+  .genre-pill { background: var(--surface2); border: 1px solid var(--border); padding: 3px 11px; border-radius: 20px; font-size: .78rem; color: var(--accent2); }
 
-  .genres-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 14px;
-  }
-  .genre-pill {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    color: var(--accent2);
-  }
+  /* ─── radar chart ─── */
+  .radar-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  .radar-card h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 14px; align-self: flex-start; }
+  .radar-legend { display: flex; gap: 20px; margin-top: 12px; font-size: .8rem; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
 
-  /* ---- All clusters overview ---- */
-  .overview-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-  }
-  .overview-card h3 {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
-  .cluster-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-  }
+  /* ─── all clusters overview ─── */
+  .overview-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .overview-card h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 14px; }
+  .cluster-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); }
   .cluster-row:last-child { border-bottom: none; }
-  .cluster-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .cluster-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .cluster-row-info { flex: 1; }
-  .cluster-row-name { font-size: 0.9rem; font-weight: 600; }
-  .cluster-row-genres { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-  .cluster-row-size { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
-  .active-row { background: var(--surface2); border-radius: 8px; padding: 10px 10px; margin: 0 -10px; }
+  .cluster-row-name { font-size: .9rem; font-weight: 600; }
+  .cluster-row-genres { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+  .cluster-row-size { font-size: .82rem; color: var(--muted); white-space: nowrap; }
+  .active-row { background: var(--surface2); border-radius: 8px; padding: 9px 10px; margin: 0 -10px; }
 
-  .loading {
-    display: none;
-    color: var(--muted);
-    font-size: 0.9rem;
-    padding: 8px 0;
-  }
+  /* ─── recommendations ─── */
+  .recs-section { margin-top: 24px; }
+  .recs-section h2 { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+  .recs-section h2 span { color: var(--accent); }
+  .recs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .rec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; transition: border-color .2s; }
+  .rec-card:hover { border-color: var(--accent); }
+  .rec-title { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+  .rec-genres { font-size: .75rem; color: var(--muted); margin-bottom: 10px; }
+  .rec-stars { display: flex; align-items: center; gap: 6px; }
+  .stars-bar { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .stars-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .rec-avg { font-size: .8rem; color: var(--accent2); font-weight: 600; white-space: nowrap; }
+  .rec-cnt { font-size: .72rem; color: var(--muted); margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -234,7 +123,7 @@
 <header>
   <div>
     <h1>User Clustering</h1>
-    <span>Group users by taste profile &mdash; K-Means &amp; DBSCAN</span>
+    <span>Taste groups · K-Means &amp; DBSCAN · Cluster recommendations</span>
   </div>
 </header>
 
@@ -253,8 +142,8 @@
         <option value="dbscan">DBSCAN</option>
       </select>
     </div>
-    <button id="btn" onclick="run()">Find Cluster</button>
-    <span class="loading" id="loading">Analysing...</span>
+    <button class="primary" id="btn" onclick="run()">Analyse</button>
+    <span class="loading" id="loading">Analysing&hellip;</span>
   </div>
 
   <div id="error"></div>
@@ -267,68 +156,95 @@
   <div class="panel-inner">
     <h2>How Clustering Works</h2>
 
-    <h3>Features</h3>
-    <p>Each user is represented by <strong>42 features</strong> before clustering:</p>
+    <h3>Features (42 per user)</h3>
     <ul>
-      <li><code>user_mean</code>, <code>user_count</code>, <code>user_std</code> &mdash; rating behaviour</li>
-      <li>19 genre watch-share values &mdash; fraction of total ratings per genre</li>
-      <li>20 SVD latent dimensions &mdash; collaborative taste signal</li>
+      <li><code>user_mean</code>, <code>user_count</code>, <code>user_std</code></li>
+      <li>19 genre watch-share values</li>
+      <li>20 SVD latent dimensions</li>
     </ul>
-    <p style="margin-top:8px">All features are standardised with <code>StandardScaler</code> before clustering.</p>
+    <p style="margin-top:8px">All standardised with <code>StandardScaler</code>.</p>
 
     <h3>K-Means</h3>
-    <p>Partitions users into K non-overlapping clusters by minimising inertia (within-cluster sum of squared distances to centroid).</p>
-    <ul style="margin-top:8px">
-      <li>K is searched over 2&ndash;10</li>
-      <li>Best K is chosen by the highest <strong>silhouette score</strong></li>
-      <li>Each user is assigned exactly one cluster</li>
-    </ul>
-    <p style="margin-top:8px"><strong>Silhouette score</strong>: how similar a user is to their own cluster vs. the nearest other cluster. Range &minus;1 to +1 &mdash; higher is better.</p>
+    <p>Searches K=2&ndash;10, picks best silhouette score. Every user is assigned exactly one cluster.</p>
 
     <h3>DBSCAN</h3>
-    <p>Density-Based Spatial Clustering of Applications with Noise. Groups dense regions; sparse users become noise (&minus;1).</p>
-    <ul style="margin-top:8px">
-      <li><code>eps</code> auto-tuned: 90th percentile of 5-nearest-neighbour distances</li>
-      <li><code>min_samples = 5</code></li>
-      <li>Does not require specifying K upfront</li>
-      <li>Noise users (&minus;1) do not belong to any cluster</li>
-    </ul>
+    <p>Density-based. <code>eps</code> auto-tuned from 90th pct of 5-NN distances. Sparse users are labelled noise (&minus;1).</p>
 
-    <h3>Cluster Profiles</h3>
-    <p>Each cluster is described by:</p>
-    <ul>
-      <li>Top genres (watch-share &gt; 8%)</li>
-      <li>Average user rating &mdash; how generous raters are</li>
-      <li>Average movie count &mdash; how active users are</li>
-    </ul>
+    <h3>Radar Chart</h3>
+    <p>Shows your genre watch-share (purple) vs. the cluster average (teal) across the 8 most distinctive genres in your cluster.</p>
+
+    <h3>Cluster Recommendations</h3>
+    <p>Top movies loved by your cluster members that you haven&rsquo;t rated yet. Scored by average rating &times; log(number of raters) — high-rated <em>and</em> popular within the group.</p>
   </div>
 </div>
 </div>
 
 <script>
 let panelOpen = false;
-
 function togglePanel() {
   panelOpen = !panelOpen;
   document.getElementById('panel').classList.toggle('open', panelOpen);
 }
 
-const COLORS = [
-  '#7c6af7','#4ecdc4','#f9ca24','#f06292','#a29bfe',
-  '#55efc4','#fd79a8','#fdcb6e','#6c5ce7','#00cec9',
-];
+const COLORS = ['#7c6af7','#4ecdc4','#f9ca24','#f06292','#a29bfe','#55efc4','#fd79a8','#fdcb6e','#6c5ce7','#00cec9'];
+function clusterColor(cid) { return cid === -1 ? 'var(--noise)' : COLORS[cid % COLORS.length]; }
 
-function clusterColor(cid) {
-  if (cid === -1) return 'var(--noise)';
-  return COLORS[cid % COLORS.length];
+// ─── Radar chart ───────────────────────────────────────────────────────────────
+function buildRadar(radar) {
+  const { axes, user, cluster } = radar;
+  const N    = axes.length;
+  const SIZE = 220;
+  const CX = SIZE / 2, CY = SIZE / 2, R = 88;
+
+  function pt(val, i) {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    return [CX + val * R * Math.cos(angle), CY + val * R * Math.sin(angle)];
+  }
+  function labelPt(i) {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    return [CX + (R + 20) * Math.cos(angle), CY + (R + 20) * Math.sin(angle)];
+  }
+
+  // Grid rings
+  let rings = '';
+  for (let r = 0.25; r <= 1.01; r += 0.25) {
+    const pts = axes.map((_, i) => pt(r, i).join(',')).join(' ');
+    rings += `<polygon points="${pts}" fill="none" stroke="#2e3250" stroke-width="1"/>`;
+  }
+  // Spokes
+  let spokes = axes.map((_, i) => {
+    const [x, y] = pt(1, i);
+    return `<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="#2e3250" stroke-width="1"/>`;
+  }).join('');
+
+  // Cluster polygon
+  const cPts = cluster.map((v, i) => pt(v / Math.max(...cluster, 0.01), i).join(',')).join(' ');
+  // User polygon
+  const uPts = user.map((v, i) => pt(v / Math.max(...cluster, 0.01), i).join(',')).join(' ');
+
+  const clusterPoly = `<polygon points="${cPts}" fill="#4ecdc420" stroke="#4ecdc4" stroke-width="2" stroke-linejoin="round"/>`;
+  const userPoly    = `<polygon points="${uPts}" fill="#7c6af730" stroke="#7c6af7" stroke-width="2" stroke-linejoin="round"/>`;
+
+  // Labels
+  const labels = axes.map((g, i) => {
+    const [x, y] = labelPt(i);
+    const anchor = x < CX - 5 ? 'end' : x > CX + 5 ? 'start' : 'middle';
+    const dy = y < CY - 5 ? '0' : y > CY + 5 ? '1em' : '0.35em';
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dy="${dy}" font-size="10" fill="#9599b3">${g}</text>`;
+  }).join('');
+
+  return `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
+    ${rings}${spokes}${clusterPoly}${userPoly}${labels}
+  </svg>`;
 }
 
+// ─── Main run ──────────────────────────────────────────────────────────────────
 async function run() {
-  const userId = parseInt(document.getElementById('userId').value);
-  const model  = document.getElementById('model').value;
-  const errEl  = document.getElementById('error');
-  const resEl  = document.getElementById('results');
-  const btn    = document.getElementById('btn');
+  const userId  = parseInt(document.getElementById('userId').value);
+  const model   = document.getElementById('model').value;
+  const errEl   = document.getElementById('error');
+  const resEl   = document.getElementById('results');
+  const btn     = document.getElementById('btn');
   const loading = document.getElementById('loading');
 
   errEl.style.display = 'none';
@@ -337,50 +253,65 @@ async function run() {
   loading.style.display = 'inline';
 
   try {
-    const r = await fetch(`./cluster?user_id=${userId}&model=${model}`);
-    const data = await r.json();
-    if (!r.ok) { throw new Error(data.detail || 'Server error'); }
+    // Fetch cluster assignment + recommendations in parallel
+    const [clRes, recRes] = await Promise.all([
+      fetch(`./cluster?user_id=${userId}&model=${model}`),
+      fetch(`./cluster_recommendations?user_id=${userId}&model=${model}&n=8`),
+    ]);
+
+    const data = await clRes.json();
+    const recData = await recRes.json();
+
+    if (!clRes.ok) throw new Error(data.detail || 'Server error');
 
     const cid     = data.cluster_id;
     const profile = data.profile;
     const all     = data.all_clusters;
+    const radar   = data.radar;
+    const recs    = recData.recommendations || [];
+    const isNoise = cid === -1;
+    const label   = isNoise ? 'Noise' : `Cluster ${cid}`;
 
-    const isNoise   = cid === -1;
-    const clusterLabel = isNoise ? 'Noise' : `Cluster ${cid}`;
-    const topGenres = (profile.top_genres || []);
-
-    const userCard = `
+    // ── Cluster card ──
+    const clusterCard = `
       <div class="cluster-card ${isNoise ? 'noise' : ''}">
-        <div class="tag">Your Cluster &mdash; ${model === 'kmeans' ? 'K-Means' : 'DBSCAN'}</div>
-        <div class="cluster-name" style="color:${clusterColor(cid)}">${clusterLabel}</div>
-        <div class="cluster-size">${profile.size ? profile.size + ' users in this cluster' : 'Not assigned to a cluster'}</div>
+        <div class="card-tag">Your Cluster &mdash; ${model === 'kmeans' ? 'K-Means' : 'DBSCAN'}</div>
+        <div class="cluster-name" style="color:${clusterColor(cid)}">${label}</div>
+        <div class="cluster-size">${profile.size ? profile.size + ' users' : 'Noise — no cluster assigned'}</div>
         ${profile.size ? `
-        <div class="stat-row">
-          <span class="label">Avg rating</span>
-          <span class="value">${profile.user_mean} / 5.0</span>
-        </div>
-        <div class="stat-row">
-          <span class="label">Avg movies rated</span>
-          <span class="value">${profile.user_count}</span>
-        </div>
-        <div class="genres-list">
-          ${topGenres.length ? topGenres.map(g => `<span class="genre-pill">${g}</span>`).join('') : '<span style="color:var(--muted);font-size:0.82rem">No dominant genres</span>'}
-        </div>` : '<p style="color:var(--muted);font-size:0.85rem;margin-top:8px">DBSCAN classified this user as noise &mdash; their taste profile is too different from any dense group.</p>'}
+          <div class="stat-row"><span class="lbl">Avg rating</span><span class="val">${profile.user_mean} / 5.0</span></div>
+          <div class="stat-row"><span class="lbl">Avg movies rated</span><span class="val">${profile.user_count}</span></div>
+          <div class="genres-list">
+            ${(profile.top_genres || []).map(g => `<span class="genre-pill">${g}</span>`).join('') || '<span style="color:var(--muted);font-size:.82rem">No dominant genres</span>'}
+          </div>` :
+          '<p style="color:var(--muted);font-size:.85rem;margin-top:8px">Too distinct to fit any dense group.</p>'
+        }
       </div>`;
 
+    // ── Radar card ──
+    const radarCard = radar && radar.axes.length ? `
+      <div class="radar-card">
+        <h3>Genre Profile vs Cluster</h3>
+        ${buildRadar(radar)}
+        <div class="radar-legend">
+          <span><span class="legend-dot" style="background:#7c6af7"></span>You</span>
+          <span><span class="legend-dot" style="background:#4ecdc4"></span>Cluster avg</span>
+        </div>
+      </div>` : '';
+
+    // ── All clusters overview ──
     const overviewRows = all.map(p => {
       const active = p.cluster_id === cid;
-      const label  = p.cluster_id === -1 ? 'Noise' : `Cluster ${p.cluster_id}`;
+      const lbl    = p.cluster_id === -1 ? 'Noise' : `Cluster ${p.cluster_id}`;
       const genres = (p.top_genres || []).slice(0, 3).join(', ') || '—';
-      return `
-        <div class="cluster-row ${active ? 'active-row' : ''}">
-          <div class="cluster-dot" style="background:${clusterColor(p.cluster_id)}"></div>
-          <div class="cluster-row-info">
-            <div class="cluster-row-name" style="color:${clusterColor(p.cluster_id)}">${label}</div>
-            <div class="cluster-row-genres">${genres}</div>
-          </div>
-          <div class="cluster-row-size">${p.size} users</div>
-        </div>`;
+      return `<div class="cluster-row ${active ? 'active-row' : ''}">
+        <div class="cluster-dot" style="background:${clusterColor(p.cluster_id)}"></div>
+        <div class="cluster-row-info">
+          <div class="cluster-row-name" style="color:${clusterColor(p.cluster_id)}">${lbl}</div>
+          <div class="cluster-row-genres">${genres}</div>
+        </div>
+        <div class="cluster-row-size">${p.size} users</div>
+      </div>`;
     }).join('');
 
     const overviewCard = `
@@ -389,7 +320,35 @@ async function run() {
         ${overviewRows}
       </div>`;
 
-    resEl.innerHTML = `<div class="result-grid">${userCard}${overviewCard}</div>`;
+    // ── Recommendations ──
+    const recsHtml = recs.length ? `
+      <div class="recs-section">
+        <h2>What Your <span>Cluster</span> Loves — Movies You Haven't Seen</h2>
+        <div class="recs-grid">
+          ${recs.map(r => {
+            const pct = Math.round(((r.avg - 0.5) / 4.5) * 100);
+            return `<div class="rec-card">
+              <div class="rec-title">${r.title}</div>
+              <div class="rec-genres">${r.genres.replace(/\|/g, ' · ')}</div>
+              <div class="rec-stars">
+                <div class="stars-bar"><div class="stars-fill" style="width:${pct}%"></div></div>
+                <span class="rec-avg">${r.avg}</span>
+              </div>
+              <div class="rec-cnt">Rated by ${r.cnt} cluster member${r.cnt !== 1 ? 's' : ''}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : (isNoise ? '' : `
+      <div class="recs-section">
+        <p style="color:var(--muted);font-size:.88rem">No unseen movies found with enough cluster ratings.</p>
+      </div>`);
+
+    // Assemble
+    const topRow = radarCard
+      ? `<div class="result-area three">${clusterCard}${radarCard}${overviewCard}</div>`
+      : `<div class="result-area">${clusterCard}${overviewCard}</div>`;
+
+    resEl.innerHTML = topRow + recsHtml;
 
   } catch(e) {
     errEl.textContent = e.message;
@@ -400,9 +359,7 @@ async function run() {
   }
 }
 
-document.getElementById('userId').addEventListener('keydown', e => {
-  if (e.key === 'Enter') run();
-});
+document.getElementById('userId').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
 </script>
 </body>
 </html>
