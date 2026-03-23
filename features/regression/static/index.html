@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rating Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 { font-size: 2rem; margin-bottom: 6px; color: #fff; }
+    h1 span { color: #f472b6; }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 36px; }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 14px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .model-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .model-label-row label { margin-bottom: 0; }
+
+    .info-toggle {
+      font-size: 0.75rem;
+      color: #f472b6;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+      padding: 2px 8px;
+      border: 1px solid #f472b6;
+      border-radius: 99px;
+      transition: background 0.2s;
+    }
+    .info-toggle:hover { background: #f472b622; }
+    .info-toggle .arrow { transition: transform 0.3s; font-style: normal; }
+    .info-toggle.open .arrow { transform: rotate(180deg); }
+
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f0f1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1rem;
+      margin-bottom: 18px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #f472b6; }
+
+    .row { display: flex; gap: 14px; }
+    .row > div { flex: 1; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #f472b6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover  { background: #e05aaa; }
+    button:active { transform: scale(0.98); }
+    button:disabled { background: #444; cursor: not-allowed; }
+
+    #error { color: #f87171; font-size: 0.875rem; margin-top: 12px; display: none; }
+
+    /* ── Result card ── */
+    .result-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 14px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 560px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .result-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .result-genres {
+      font-size: 0.78rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .rating-display {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .rating-block { text-align: center; }
+    .rating-big {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .rating-big.predicted { color: #f472b6; }
+    .rating-big.actual    { color: #4ade80; }
+    .rating-small-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .rating-divider {
+      font-size: 1.5rem;
+      color: #333;
+      padding-bottom: 8px;
+    }
+
+    .star-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .star {
+      font-size: 1.3rem;
+      transition: color 0.3s;
+    }
+
+    .diff-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-top: 6px;
+    }
+    .diff-good  { background: #14532d; color: #4ade80; }
+    .diff-ok    { background: #713f12; color: #fbbf24; }
+    .diff-bad   { background: #7f1d1d; color: #f87171; }
+    .diff-none  { background: #1e293b; color: #94a3b8; }
+
+    .model-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+    }
+    .badge-ridge         { background: #1e3a5f; color: #60a5fa; }
+    .badge-random_forest { background: #1a3a2a; color: #4ade80; }
+    .badge-xgboost       { background: #2e1f3e; color: #c084fc; }
+
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid #333;
+      border-top-color: #f472b6;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Side panel ── */
+    .side-panel {
+      width: 320px;
+      flex-shrink: 0;
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 14px;
+      overflow: hidden;
+      transition: width 0.35s ease, opacity 0.3s ease, border-color 0.2s;
+      position: sticky;
+      top: 40px;
+    }
+    .side-panel.collapsed { width: 0; opacity: 0; border-color: transparent; pointer-events: none; }
+
+    .panel-inner { padding: 22px 20px; min-width: 320px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .panel-title  { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+    .panel-close  { cursor: pointer; color: #555; font-size: 1.1rem; transition: color 0.2s; }
+    .panel-close:hover { color: #e0e0e0; }
+    .panel-model-name { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 16px; }
+
+    .pipeline-step { display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start; }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #f472b622; border: 1px solid #f472b6;
+      color: #f472b6; font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-body  { flex: 1; }
+    .step-title { font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .step-desc  { font-size: 0.78rem; color: #999; line-height: 1.5; }
+    .step-desc code {
+      background: #0f0f1a; border: 1px solid #2a2a45;
+      border-radius: 4px; padding: 1px 5px;
+      font-size: 0.75rem; color: #f472b6;
+    }
+
+    .features-box { background: #0f0f1a; border: 1px solid #2a2a45; border-radius: 8px; padding: 12px 14px; margin-top: 6px; }
+    .features-box .feat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-bottom: 8px; }
+    .feat-tag {
+      display: inline-block; background: #1a1a2e; border: 1px solid #2a2a45;
+      border-radius: 4px; padding: 2px 8px; font-size: 0.72rem; color: #aaa; margin: 2px 3px 2px 0;
+    }
+    .divider { height: 1px; background: #2a2a45; margin: 14px 0; }
+
+    @media (max-width: 860px) {
+      .layout { flex-direction: column; align-items: center; }
+      .side-panel { width: 100%; max-width: 560px; position: static; }
+      .side-panel.collapsed { width: 100%; max-height: 0; opacity: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⭐ Rating <span>Predictor</span></h1>
+  <p class="subtitle">Predict the exact rating a user would give a movie · Ridge · Random Forest · XGBoost</p>
+
+  <div class="layout">
+
+    <div class="main-col">
+      <div class="card">
+        <div class="row">
+          <div>
+            <label for="userId">User ID</label>
+            <input type="number" id="userId" min="1" placeholder="e.g. 42" />
+          </div>
+          <div>
+            <label for="movieId">Movie ID</label>
+            <input type="number" id="movieId" min="1" placeholder="e.g. 318" />
+          </div>
+        </div>
+
+        <div class="model-label-row">
+          <label for="model">Model</label>
+          <span class="info-toggle" id="infoToggle" onclick="togglePanel()">
+            How it works <i class="arrow">▾</i>
+          </span>
+        </div>
+        <select id="model" onchange="onModelChange()">
+          <option value="ridge">Ridge — Linear Regression</option>
+          <option value="random_forest">Random Forest — Ensemble</option>
+          <option value="xgboost" selected>XGBoost — Gradient Boosting</option>
+        </select>
+
+        <button id="btn" onclick="predict()">Predict Rating</button>
+        <div id="error"></div>
+      </div>
+
+      <div id="result"></div>
+    </div>
+
+    <!-- Side panel -->
+    <div class="side-panel collapsed" id="sidePanel">
+      <div class="panel-inner">
+        <div class="panel-header">
+          <span class="panel-title">Pipeline</span>
+          <span class="panel-close" onclick="togglePanel()">✕</span>
+        </div>
+        <div id="panelContent"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const PIPELINES = {
+      ridge: {
+        name: 'Ridge — Linear Regression',
+        steps: [
+          {
+            title: 'Compute user & movie statistics',
+            desc: 'From training ratings, compute the average rating and total count for every user and every movie. These capture global bias — a generous user or a well-loved movie.'
+          },
+          {
+            title: 'SVD latent features',
+            desc: 'A <code>TruncatedSVD(50)</code> is run on the user-item matrix to produce 50 latent dimensions per user. These encode taste beyond simple averages.'
+          },
+          {
+            title: 'Genre one-hot encoding',
+            desc: 'Each movie\'s pipe-separated genres are split and one-hot encoded into binary flags (e.g. <code>genre_Action=1</code>, <code>genre_Drama=0</code>). Gives the model content-side signal.',
+            features: ['user_mean', 'user_count', 'movie_mean', 'movie_count', 'svd_0…svd_49', 'genre_Action', 'genre_Drama', '… (20 genre flags)']
+          },
+          {
+            title: 'Ridge regression fit',
+            desc: '<code>Ridge(alpha=1.0)</code> fits a single linear equation: <code>rating = w·features + b</code>. L2 regularisation (alpha) prevents overfitting by penalising large weights. Fast to train and interpretable.'
+          },
+          {
+            title: 'Predict',
+            desc: 'For a given (user, movie) pair, build the 74-dim feature vector and compute one dot product. Output is clipped to <code>[0.5, 5.0]</code>.'
+          }
+        ]
+      },
+      random_forest: {
+        name: 'Random Forest — Ensemble',
+        steps: [
+          {
+            title: 'Same feature engineering as Ridge',
+            desc: '74 features: user stats (2) + movie stats (2) + SVD latent dims (50) + genre one-hot (20).',
+            features: ['user_mean', 'user_count', 'movie_mean', 'movie_count', 'svd_0…svd_49', '20 genre flags']
+          },
+          {
+            title: 'Build 200 decision trees',
+            desc: 'Each tree is trained on a random bootstrap sample of training rows and considers a random subset of features at each split. This diversity makes the ensemble robust to outliers.'
+          },
+          {
+            title: 'Control tree complexity',
+            desc: '<code>max_depth=12</code> limits how deep each tree grows. <code>min_samples_leaf=4</code> ensures each leaf node has at least 4 training examples — prevents overfitting to noise.'
+          },
+          {
+            title: 'Aggregate predictions',
+            desc: 'Final prediction = average of all 200 tree predictions. Averaging cancels out individual tree errors (variance reduction).'
+          },
+          {
+            title: 'Predict',
+            desc: 'For a given (user, movie) pair, each tree returns a rating estimate. The mean of all 200 is clipped to <code>[0.5, 5.0]</code>.'
+          }
+        ]
+      },
+      xgboost: {
+        name: 'XGBoost — Gradient Boosting',
+        steps: [
+          {
+            title: 'Same feature engineering as others',
+            desc: '74 features: user stats (2) + movie stats (2) + SVD latent dims (50) + genre one-hot (20).',
+            features: ['user_mean', 'user_count', 'movie_mean', 'movie_count', 'svd_0…svd_49', '20 genre flags']
+          },
+          {
+            title: 'Sequential boosting',
+            desc: 'Unlike Random Forest (parallel trees), XGBoost builds 300 trees <em>sequentially</em>. Each new tree corrects the residual error left by all previous trees. Converges to a better solution than averaging.'
+          },
+          {
+            title: 'Gradient descent on trees',
+            desc: '<code>learning_rate=0.05</code> controls how much each tree contributes. Lower = slower but more stable. Row and column subsampling (<code>0.8</code> each) add regularisation similar to dropout in neural nets.'
+          },
+          {
+            title: 'Predict',
+            desc: 'Sum contributions of all 300 trees for the feature vector. Result is clipped to <code>[0.5, 5.0]</code>. Typically achieves the lowest RMSE of the three models.'
+          }
+        ]
+      }
+    };
+
+    function renderPanel(model) {
+      const p  = PIPELINES[model];
+      const el = document.getElementById('panelContent');
+      let html = `<div class="panel-model-name">${p.name}</div>`;
+      p.steps.forEach((s, i) => {
+        html += `<div class="pipeline-step">
+                   <div class="step-num">${i + 1}</div>
+                   <div class="step-body">
+                     <div class="step-title">${s.title}</div>
+                     <div class="step-desc">${s.desc}</div>`;
+        if (s.features) {
+          html += `<div class="features-box"><div class="feat-label">Input features</div>`;
+          s.features.forEach(f => { html += `<span class="feat-tag">${f}</span>`; });
+          html += `</div>`;
+        }
+        html += `</div></div>`;
+        if (i < p.steps.length - 1) html += `<div class="divider"></div>`;
+      });
+      el.innerHTML = html;
+    }
+
+    let panelOpen = false;
+    function togglePanel() {
+      panelOpen = !panelOpen;
+      const panel  = document.getElementById('sidePanel');
+      const toggle = document.getElementById('infoToggle');
+      if (panelOpen) {
+        renderPanel(document.getElementById('model').value);
+        panel.classList.remove('collapsed');
+        toggle.classList.add('open');
+      } else {
+        panel.classList.add('collapsed');
+        toggle.classList.remove('open');
+      }
+    }
+    function onModelChange() {
+      if (panelOpen) renderPanel(document.getElementById('model').value);
+    }
+
+    function starsHTML(rating) {
+      let html = '<div class="star-row">';
+      for (let i = 1; i <= 5; i++) {
+        const filled = rating >= i ? '#f472b6' : (rating >= i - 0.5 ? '#f472b688' : '#2a2a45');
+        html += `<span class="star" style="color:${filled}">★</span>`;
+      }
+      return html + '</div>';
+    }
+
+    async function predict() {
+      const userId  = document.getElementById('userId').value.trim();
+      const movieId = document.getElementById('movieId').value.trim();
+      const model   = document.getElementById('model').value;
+      const errEl   = document.getElementById('error');
+      const btn     = document.getElementById('btn');
+      const out     = document.getElementById('result');
+
+      errEl.style.display = 'none';
+      if (!userId)  { showError('Please enter a User ID.');  return; }
+      if (!movieId) { showError('Please enter a Movie ID.'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div>';
+      out.innerHTML = '';
+
+      try {
+        const res  = await fetch(`./predict?user_id=${userId}&movie_id=${movieId}&model=${model}`);
+        const data = await res.json();
+        if (!res.ok) { showError(data.detail || 'API error'); return; }
+
+        const diff    = data.actual_rating !== null ? Math.abs(data.predicted_rating - data.actual_rating) : null;
+        const diffTag = diff === null
+          ? `<span class="diff-tag diff-none">No actual rating on record</span>`
+          : diff <= 0.5
+            ? `<span class="diff-tag diff-good">Off by ${diff.toFixed(2)} ★ — Great prediction</span>`
+            : diff <= 1.0
+              ? `<span class="diff-tag diff-ok">Off by ${diff.toFixed(2)} ★ — Decent</span>`
+              : `<span class="diff-tag diff-bad">Off by ${diff.toFixed(2)} ★ — Missed</span>`;
+
+        const genres = (data.genres || '').replace(/\|/g, ' · ');
+        const badge  = `badge-${model}`;
+
+        out.innerHTML = `
+          <div class="result-card">
+            <div class="model-badge ${badge}">${model.replace('_', ' ')}</div>
+            <div class="result-title">${data.title}</div>
+            <div class="result-genres">${genres}</div>
+            <div class="rating-display">
+              <div class="rating-block">
+                <div class="rating-big predicted">${data.predicted_rating}</div>
+                ${starsHTML(data.predicted_rating)}
+                <div class="rating-small-label">Predicted</div>
+              </div>
+              ${data.actual_rating !== null ? `
+              <div class="rating-divider">→</div>
+              <div class="rating-block">
+                <div class="rating-big actual">${data.actual_rating}</div>
+                ${starsHTML(data.actual_rating)}
+                <div class="rating-small-label">Actual</div>
+              </div>` : ''}
+            </div>
+            ${diffTag}
+          </div>`;
+
+      } catch (e) {
+        showError('Could not reach the server.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Predict Rating';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') predict();
+    });
+  </script>
+</body>
+</html>

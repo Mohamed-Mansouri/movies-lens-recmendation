@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>User Clustering</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #7c6af7;
+    --accent2: #4ecdc4;
+    --text: #e8eaf6;
+    --muted: #9599b3;
+    --border: #2e3250;
+    --noise: #f06292;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+  header span { color: var(--muted); font-size: 0.9rem; }
+
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  .main-area {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+  }
+  .panel {
+    width: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+  }
+  .panel.open { width: 380px; }
+  .panel-inner { padding: 24px; width: 380px; }
+  .panel h2 { font-size: 1rem; color: var(--accent); margin-bottom: 16px; }
+  .panel h3 { font-size: 0.85rem; color: var(--accent2); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .panel p, .panel li { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  .panel ul { padding-left: 16px; }
+  .panel code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 0.78rem; color: var(--accent2); }
+  .panel-toggle {
+    position: fixed;
+    top: 22px;
+    right: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: color 0.2s, border-color 0.2s;
+    z-index: 100;
+  }
+  .panel-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+  .controls {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  input, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    outline: none;
+    min-width: 140px;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #error {
+    background: #2d1a1a;
+    border: 1px solid #c0392b;
+    color: #e74c3c;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.88rem;
+    display: none;
+  }
+
+  /* ---- Result layout ---- */
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 700px) { .result-grid { grid-template-columns: 1fr; } }
+
+  .cluster-card {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .cluster-card .tag {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .cluster-card .cluster-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .cluster-card.noise .cluster-name { color: var(--noise); }
+  .cluster-card .cluster-size {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .value { color: var(--text); font-weight: 600; }
+
+  .genres-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .genre-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--accent2);
+  }
+
+  /* ---- All clusters overview ---- */
+  .overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .overview-card h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .cluster-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cluster-row:last-child { border-bottom: none; }
+  .cluster-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .cluster-row-info { flex: 1; }
+  .cluster-row-name { font-size: 0.9rem; font-weight: 600; }
+  .cluster-row-genres { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .cluster-row-size { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+  .active-row { background: var(--surface2); border-radius: 8px; padding: 10px 10px; margin: 0 -10px; }
+
+  .loading {
+    display: none;
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: 8px 0;
+  }
+</style>
+</head>
+<body>
+
+<button class="panel-toggle" onclick="togglePanel()">How it works</button>
+
+<header>
+  <div>
+    <h1>User Clustering</h1>
+    <span>Group users by taste profile &mdash; K-Means &amp; DBSCAN</span>
+  </div>
+</header>
+
+<div class="layout">
+<div class="main-area">
+
+  <div class="controls">
+    <div class="field">
+      <label>User ID</label>
+      <input id="userId" type="number" min="1" placeholder="e.g. 42" value="42"/>
+    </div>
+    <div class="field">
+      <label>Algorithm</label>
+      <select id="model">
+        <option value="kmeans">K-Means</option>
+        <option value="dbscan">DBSCAN</option>
+      </select>
+    </div>
+    <button id="btn" onclick="run()">Find Cluster</button>
+    <span class="loading" id="loading">Analysing...</span>
+  </div>
+
+  <div id="error"></div>
+  <div id="results"></div>
+
+</div>
+
+<!-- Pipeline panel -->
+<div class="panel" id="panel">
+  <div class="panel-inner">
+    <h2>How Clustering Works</h2>
+
+    <h3>Features</h3>
+    <p>Each user is represented by <strong>42 features</strong> before clustering:</p>
+    <ul>
+      <li><code>user_mean</code>, <code>user_count</code>, <code>user_std</code> &mdash; rating behaviour</li>
+      <li>19 genre watch-share values &mdash; fraction of total ratings per genre</li>
+      <li>20 SVD latent dimensions &mdash; collaborative taste signal</li>
+    </ul>
+    <p style="margin-top:8px">All features are standardised with <code>StandardScaler</code> before clustering.</p>
+
+    <h3>K-Means</h3>
+    <p>Partitions users into K non-overlapping clusters by minimising inertia (within-cluster sum of squared distances to centroid).</p>
+    <ul style="margin-top:8px">
+      <li>K is searched over 2&ndash;10</li>
+      <li>Best K is chosen by the highest <strong>silhouette score</strong></li>
+      <li>Each user is assigned exactly one cluster</li>
+    </ul>
+    <p style="margin-top:8px"><strong>Silhouette score</strong>: how similar a user is to their own cluster vs. the nearest other cluster. Range &minus;1 to +1 &mdash; higher is better.</p>
+
+    <h3>DBSCAN</h3>
+    <p>Density-Based Spatial Clustering of Applications with Noise. Groups dense regions; sparse users become noise (&minus;1).</p>
+    <ul style="margin-top:8px">
+      <li><code>eps</code> auto-tuned: 90th percentile of 5-nearest-neighbour distances</li>
+      <li><code>min_samples = 5</code></li>
+      <li>Does not require specifying K upfront</li>
+      <li>Noise users (&minus;1) do not belong to any cluster</li>
+    </ul>
+
+    <h3>Cluster Profiles</h3>
+    <p>Each cluster is described by:</p>
+    <ul>
+      <li>Top genres (watch-share &gt; 8%)</li>
+      <li>Average user rating &mdash; how generous raters are</li>
+      <li>Average movie count &mdash; how active users are</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<script>
+let panelOpen = false;
+
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('panel').classList.toggle('open', panelOpen);
+}
+
+const COLORS = [
+  '#7c6af7','#4ecdc4','#f9ca24','#f06292','#a29bfe',
+  '#55efc4','#fd79a8','#fdcb6e','#6c5ce7','#00cec9',
+];
+
+function clusterColor(cid) {
+  if (cid === -1) return 'var(--noise)';
+  return COLORS[cid % COLORS.length];
+}
+
+async function run() {
+  const userId = parseInt(document.getElementById('userId').value);
+  const model  = document.getElementById('model').value;
+  const errEl  = document.getElementById('error');
+  const resEl  = document.getElementById('results');
+  const btn    = document.getElementById('btn');
+  const loading = document.getElementById('loading');
+
+  errEl.style.display = 'none';
+  resEl.innerHTML = '';
+  btn.disabled = true;
+  loading.style.display = 'inline';
+
+  try {
+    const r = await fetch(`./cluster?user_id=${userId}&model=${model}`);
+    const data = await r.json();
+    if (!r.ok) { throw new Error(data.detail || 'Server error'); }
+
+    const cid     = data.cluster_id;
+    const profile = data.profile;
+    const all     = data.all_clusters;
+
+    const isNoise   = cid === -1;
+    const clusterLabel = isNoise ? 'Noise' : `Cluster ${cid}`;
+    const topGenres = (profile.top_genres || []);
+
+    const userCard = `
+      <div class="cluster-card ${isNoise ? 'noise' : ''}">
+        <div class="tag">Your Cluster &mdash; ${model === 'kmeans' ? 'K-Means' : 'DBSCAN'}</div>
+        <div class="cluster-name" style="color:${clusterColor(cid)}">${clusterLabel}</div>
+        <div class="cluster-size">${profile.size ? profile.size + ' users in this cluster' : 'Not assigned to a cluster'}</div>
+        ${profile.size ? `
+        <div class="stat-row">
+          <span class="label">Avg rating</span>
+          <span class="value">${profile.user_mean} / 5.0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Avg movies rated</span>
+          <span class="value">${profile.user_count}</span>
+        </div>
+        <div class="genres-list">
+          ${topGenres.length ? topGenres.map(g => `<span class="genre-pill">${g}</span>`).join('') : '<span style="color:var(--muted);font-size:0.82rem">No dominant genres</span>'}
+        </div>` : '<p style="color:var(--muted);font-size:0.85rem;margin-top:8px">DBSCAN classified this user as noise &mdash; their taste profile is too different from any dense group.</p>'}
+      </div>`;
+
+    const overviewRows = all.map(p => {
+      const active = p.cluster_id === cid;
+      const label  = p.cluster_id === -1 ? 'Noise' : `Cluster ${p.cluster_id}`;
+      const genres = (p.top_genres || []).slice(0, 3).join(', ') || '—';
+      return `
+        <div class="cluster-row ${active ? 'active-row' : ''}">
+          <div class="cluster-dot" style="background:${clusterColor(p.cluster_id)}"></div>
+          <div class="cluster-row-info">
+            <div class="cluster-row-name" style="color:${clusterColor(p.cluster_id)}">${label}</div>
+            <div class="cluster-row-genres">${genres}</div>
+          </div>
+          <div class="cluster-row-size">${p.size} users</div>
+        </div>`;
+    }).join('');
+
+    const overviewCard = `
+      <div class="overview-card">
+        <h3>All Clusters</h3>
+        ${overviewRows}
+      </div>`;
+
+    resEl.innerHTML = `<div class="result-grid">${userCard}${overviewCard}</div>`;
+
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+document.getElementById('userId').addEventListener('keydown', e => {
+  if (e.key === 'Enter') run();
+});
+</script>
+</body>
+</html>
