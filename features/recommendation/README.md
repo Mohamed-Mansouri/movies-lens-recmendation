@@ -1,20 +1,20 @@
 # Movie Recommendation Feature
 
-Collaborative filtering system built on the **MovieLens Latest Small** dataset.
+Collaborative filtering system built on the **MovieLens 10M** dataset.
 Given a `user_id`, each model predicts ratings for all unseen movies and returns the top-N highest.
 
 ---
 
 ## Dataset
 
-Source: `../dataset/` (ml-latest-small)
+Source: `../dataset/` (ml-1m)
 
 | File | Contents |
 |---|---|
-| `ratings.csv` | `userId, movieId, rating, timestamp` — 100,836 ratings |
-| `movies.csv` | `movieId, title, genres` — 9,742 movies |
+| `ratings.csv` | `userId, movieId, rating, timestamp` — 10,000,054 ratings |
+| `movies.csv` | `movieId, title, genres` — 10,681 movies |
 
-- 610 users · ratings on a 0.5 – 5.0 half-star scale
+- 69,878 users · ratings on a 1.0 – 5.0 full-star scale
 - **Train / Test split**: 80 / 20 (`random_state=42`)
 
 ---
@@ -24,7 +24,7 @@ Source: `../dataset/` (ml-latest-small)
 1. **Load** `ratings.csv` and split into train / test sets.
 
 2. **Build user-item matrix**
-   Pivot the training ratings into a `(610 users × 9,742 movies)` matrix.
+   Pivot the training ratings into a `(69,878 users × 10,681 movies)` matrix.
    Missing entries (no rating) are filled with `0`.
 
    ```
@@ -54,17 +54,17 @@ Source: `../dataset/` (ml-latest-small)
 
 **How it works**:
 ```
-matrix_centred  →  TruncatedSVD  →  U_sigma (610×100)  ·  Vt (100×9742)
+matrix_centred  →  TruncatedSVD  →  U_sigma (6040×100)  ·  Vt (100×3952)
                                      ↓
                    predicted = (U_sigma · Vt) + row_means   (add bias back)
 ```
 
-**Input features**: the full mean-centred user-item matrix `(610 × 9742)`
+**Input features**: the full mean-centred user-item matrix `(6040 × 3952)`
 
 **Saved artifacts**:
-- `U_sigma` — user latent matrix `(610 × 100)`
-- `Vt` — item latent matrix `(100 × 9742)`
-- `row_means` — per-user mean rating `(610,)`
+- `U_sigma` — user latent matrix `(6040 × 100)`
+- `Vt` — item latent matrix `(100 × 3952)`
+- `row_means` — per-user mean rating `(6040,)`
 
 **Prediction**: reconstruct `U_sigma @ Vt + row_means` once on load, then index directly with `rec[user_idx, movie_idx]`.
 
@@ -93,13 +93,13 @@ matrix_centred  →  TruncatedSVD  →  U_sigma (610×100)  ·  Vt (100×9742)
 
 Mean-centering the prediction corrects for the fact that some users rate everything high or low.
 
-**Input features**: the raw user-item matrix `(610 × 9742)` (0 where no rating)
+**Input features**: the raw user-item matrix `(6040 × 3952)` (0 where no rating)
 
 **Saved artifacts**:
 - `matrix_vals` — the user-item matrix as numpy array
 - `row_means` — per-user mean rating
-- `knn_distances` — pre-computed cosine distances to 41 neighbours per user `(610 × 41)`
-- `knn_indices` — corresponding neighbour row indices `(610 × 41)`
+- `knn_distances` — pre-computed cosine distances to 41 neighbours per user `(6040 × 41)`
+- `knn_indices` — corresponding neighbour row indices `(6040 × 41)`
 
 **Prediction**: use cached distances — no recomputation needed per request.
 

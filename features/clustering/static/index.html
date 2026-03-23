@@ -83,7 +83,7 @@
   .genre-pill { background: var(--surface2); border: 1px solid var(--border); padding: 3px 11px; border-radius: 20px; font-size: .78rem; color: var(--accent2); }
 
   /* ─── radar chart ─── */
-  .radar-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  .radar-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 56px 20px; display: flex; flex-direction: column; align-items: center; overflow: visible; }
   .radar-card h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 14px; align-self: flex-start; }
   .radar-legend { display: flex; gap: 20px; margin-top: 12px; font-size: .8rem; color: var(--muted); }
   .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
@@ -194,7 +194,8 @@ function buildRadar(radar) {
   const { axes, user, cluster } = radar;
   const N    = axes.length;
   const SIZE = 220;
-  const CX = SIZE / 2, CY = SIZE / 2, R = 88;
+  const CX = SIZE / 2, CY = SIZE / 2, R = 76;
+  const LABEL_R = R + 26;
 
   function pt(val, i) {
     const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
@@ -202,7 +203,7 @@ function buildRadar(radar) {
   }
   function labelPt(i) {
     const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
-    return [CX + (R + 20) * Math.cos(angle), CY + (R + 20) * Math.sin(angle)];
+    return [CX + LABEL_R * Math.cos(angle), CY + LABEL_R * Math.sin(angle)];
   }
 
   // Grid rings
@@ -217,23 +218,23 @@ function buildRadar(radar) {
     return `<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="#2e3250" stroke-width="1"/>`;
   }).join('');
 
-  // Cluster polygon
-  const cPts = cluster.map((v, i) => pt(v / Math.max(...cluster, 0.01), i).join(',')).join(' ');
-  // User polygon
-  const uPts = user.map((v, i) => pt(v / Math.max(...cluster, 0.01), i).join(',')).join(' ');
+  const scale = Math.max(...cluster, 0.01);
+  const cPts  = cluster.map((v, i) => pt(v / scale, i).join(',')).join(' ');
+  const uPts  = user.map((v, i)    => pt(v / scale, i).join(',')).join(' ');
 
   const clusterPoly = `<polygon points="${cPts}" fill="#4ecdc420" stroke="#4ecdc4" stroke-width="2" stroke-linejoin="round"/>`;
   const userPoly    = `<polygon points="${uPts}" fill="#7c6af730" stroke="#7c6af7" stroke-width="2" stroke-linejoin="round"/>`;
 
-  // Labels
+  // Labels — anchor based on which side of center, short name (max 11 chars)
   const labels = axes.map((g, i) => {
     const [x, y] = labelPt(i);
-    const anchor = x < CX - 5 ? 'end' : x > CX + 5 ? 'start' : 'middle';
-    const dy = y < CY - 5 ? '0' : y > CY + 5 ? '1em' : '0.35em';
-    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dy="${dy}" font-size="10" fill="#9599b3">${g}</text>`;
+    const anchor = x < CX - 4 ? 'end' : x > CX + 4 ? 'start' : 'middle';
+    const dy     = y < CY - 4 ? '0'   : y > CY + 4 ? '1em'   : '0.35em';
+    const name   = g.length > 11 ? g.slice(0, 10) + '…' : g;
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dy="${dy}" font-size="10" fill="#9599b3">${name}</text>`;
   }).join('');
 
-  return `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
+  return `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}" style="overflow:visible">
     ${rings}${spokes}${clusterPoly}${userPoly}${labels}
   </svg>`;
 }

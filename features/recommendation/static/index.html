@@ -353,7 +353,7 @@
         steps: [
           {
             title: 'Build user-item matrix',
-            desc: 'All training ratings are pivoted into a <code>(610 × 9742)</code> matrix. Missing entries are filled with <code>0</code>.'
+            desc: 'All training ratings are pivoted into a <code>(6,040 × 3,952)</code> matrix. Missing entries are filled with <code>0</code>.'
           },
           {
             title: 'Mean-centre rows',
@@ -361,12 +361,12 @@
           },
           {
             title: 'Truncated SVD decomposition',
-            desc: 'The centred matrix is decomposed into <code>U_sigma (610×100)</code> and <code>Vt (100×9742)</code> — 100 latent factors capturing hidden taste dimensions.'
+            desc: 'The centred matrix is decomposed into <code>U_sigma (6040×100)</code> and <code>Vt (100×3952)</code> — 100 latent factors capturing hidden taste dimensions.'
           },
           {
             title: 'Reconstruct predictions',
             desc: '<code>predicted = U_sigma · Vt + user_means</code>. The mean is added back to restore the original rating scale. Clipped to <code>[0.5, 5.0]</code>.',
-            features: ['Full user-item matrix (610 × 9742)']
+            features: ['Full user-item matrix (6,040 × 3,952)']
           },
           {
             title: 'Top-N recommendation',
@@ -379,7 +379,7 @@
         steps: [
           {
             title: 'Build user-item matrix',
-            desc: 'Same <code>(610 × 9742)</code> matrix as SVD. Each row is a user\'s rating vector — zeros where no rating exists.'
+            desc: 'Same <code>(6,040 × 3,952)</code> matrix as SVD. Each row is a user\'s rating vector — zeros where no rating exists.'
           },
           {
             title: 'Pre-compute cosine similarity',
@@ -401,7 +401,7 @@
         steps: [
           {
             title: 'Build user-item matrix + run SVD',
-            desc: 'SVD is run first to produce <code>U_sigma (610×100)</code> — 100 latent dimensions per user that encode learned taste. These become XGBoost features.'
+            desc: 'SVD is run first to produce <code>U_sigma (6040×100)</code> — 100 latent dimensions per user that encode learned taste. These become XGBoost features.'
           },
           {
             title: 'Engineer per-(user, movie) features',
