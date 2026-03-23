@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Genre Classifier</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 { font-size: 2rem; margin-bottom: 6px; color: #fff; }
+    h1 span { color: #34d399; }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 36px; }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 14px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .model-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .model-label-row label { margin-bottom: 0; }
+
+    .info-toggle {
+      font-size: 0.75rem;
+      color: #34d399;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+      padding: 2px 8px;
+      border: 1px solid #34d399;
+      border-radius: 99px;
+      transition: background 0.2s;
+    }
+    .info-toggle:hover { background: #34d39922; }
+    .info-toggle .arrow { transition: transform 0.3s; font-style: normal; }
+    .info-toggle.open .arrow { transform: rotate(180deg); }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f0f1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1rem;
+      margin-bottom: 18px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #34d399; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #34d399;
+      color: #0f0f1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover  { background: #22c987; }
+    button:active { transform: scale(0.98); }
+    button:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+    #error { color: #f87171; font-size: 0.875rem; margin-top: 12px; display: none; }
+
+    /* ── Result ── */
+    .result-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 14px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 560px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .result-title { font-size: 1rem; font-weight: 600; color: #fff; }
+
+    .model-badge {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 99px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .badge-logistic_regression { background: #1e3a5f; color: #60a5fa; }
+    .badge-random_forest        { background: #1a3a2a; color: #4ade80; }
+    .badge-xgboost              { background: #2e1f3e; color: #c084fc; }
+
+    /* Top genre display */
+    .top-genre-display {
+      text-align: center;
+      padding: 24px 0 8px;
+      animation: fadeUp 0.4s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+    .top-icon { font-size: 4rem; margin-bottom: 12px; }
+    .top-name { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .genre-card-pct { font-size: 0.8rem; color: #34d399; }
+
+    .conf-bar-wrap {
+      height: 4px;
+      background: #2a2a45;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .conf-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #6ee7b7);
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid #333;
+      border-top-color: #34d399;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Side panel ── */
+    .side-panel {
+      width: 320px; flex-shrink: 0;
+      background: #1a1a2e; border: 1px solid #2a2a45;
+      border-radius: 14px; overflow: hidden;
+      transition: width 0.35s ease, opacity 0.3s ease, border-color 0.2s;
+      position: sticky; top: 40px;
+    }
+    .side-panel.collapsed { width: 0; opacity: 0; border-color: transparent; pointer-events: none; }
+
+    .panel-inner { padding: 22px 20px; min-width: 320px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .panel-title  { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+    .panel-close  { cursor: pointer; color: #555; font-size: 1.1rem; transition: color 0.2s; }
+    .panel-close:hover { color: #e0e0e0; }
+    .panel-model-name { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 16px; }
+
+    .pipeline-step { display: flex; gap: 12px; margin-bottom: 18px; align-items: flex-start; }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #34d39922; border: 1px solid #34d399;
+      color: #34d399; font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-body  { flex: 1; }
+    .step-title { font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .step-desc  { font-size: 0.78rem; color: #999; line-height: 1.5; }
+    .step-desc code {
+      background: #0f0f1a; border: 1px solid #2a2a45;
+      border-radius: 4px; padding: 1px 5px;
+      font-size: 0.75rem; color: #34d399;
+    }
+    .features-box { background: #0f0f1a; border: 1px solid #2a2a45; border-radius: 8px; padding: 12px 14px; margin-top: 6px; }
+    .features-box .feat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-bottom: 8px; }
+    .feat-tag {
+      display: inline-block; background: #1a1a2e; border: 1px solid #2a2a45;
+      border-radius: 4px; padding: 2px 8px; font-size: 0.72rem; color: #aaa; margin: 2px 3px 2px 0;
+    }
+    .divider { height: 1px; background: #2a2a45; margin: 14px 0; }
+
+    @media (max-width: 860px) {
+      .layout { flex-direction: column; align-items: center; }
+      .side-panel { width: 100%; max-width: 560px; position: static; }
+      .side-panel.collapsed { width: 100%; max-height: 0; opacity: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎭 What Genres to <span>Watch?</span></h1>
+  <p class="subtitle">Predict which genres a user wants to watch next · Multi-label Classification</p>
+
+  <div class="layout">
+
+    <div class="main-col">
+      <div class="card">
+        <label for="userId">User ID</label>
+        <input type="number" id="userId" min="1" placeholder="e.g. 42" />
+
+        <div class="model-label-row">
+          <label for="model">Model</label>
+          <span class="info-toggle" id="infoToggle" onclick="togglePanel()">
+            How it works <i class="arrow">▾</i>
+          </span>
+        </div>
+        <select id="model" onchange="onModelChange()">
+          <option value="logistic_regression">Logistic Regression — Linear</option>
+          <option value="random_forest">Random Forest — Ensemble</option>
+          <option value="xgboost" selected>XGBoost — Gradient Boosting</option>
+        </select>
+
+        <button id="btn" onclick="classify()">What Genres to Watch?</button>
+        <div id="error"></div>
+      </div>
+
+      <div id="result"></div>
+    </div>
+
+    <!-- Side panel -->
+    <div class="side-panel collapsed" id="sidePanel">
+      <div class="panel-inner">
+        <div class="panel-header">
+          <span class="panel-title">Pipeline</span>
+          <span class="panel-close" onclick="togglePanel()">✕</span>
+        </div>
+        <div id="panelContent"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const GENRE_ICONS = {
+      Action:'⚔️', Adventure:'🗺️', Animation:'🎨', Children:'🧸',
+      Comedy:'😂', Crime:'🔫', Documentary:'🎥', Drama:'🎭',
+      Fantasy:'🧙', 'Film-Noir':'🕵️', Horror:'👻', IMAX:'🎞️',
+      Musical:'🎵', Mystery:'🔍', Romance:'❤️', 'Sci-Fi':'🚀',
+      Thriller:'😱', War:'🪖', Western:'🤠'
+    };
+
+    const PIPELINES = {
+      logistic_regression: {
+        name: 'Logistic Regression — Multi-label',
+        steps: [
+          {
+            title: 'Build labels (Y)',
+            desc: 'For each user and each genre, label = <code>1</code> if the user rated ≥2 movies in that genre with an average ≥ 3.5. This gives a binary interest flag per genre — a <em>multi-label</em> target.'
+          },
+          {
+            title: 'Feature engineering per user',
+            desc: 'Each user becomes a single row with 53 features.',
+            features: ['user_mean — overall avg rating', 'user_count — total films rated', 'user_std — rating variability', 'svd_0…svd_49 — 50 latent dims from SVD']
+          },
+          {
+            title: 'One-vs-Rest strategy',
+            desc: 'Since a user can like multiple genres, <code>MultiOutputClassifier</code> trains one independent <code>LogisticRegression</code> per genre (19 classifiers). Each outputs P(interested in genre X).'
+          },
+          {
+            title: 'Predict',
+            desc: 'Each of the 19 classifiers returns a probability. Genres with predicted label = 1 are marked as interests, sorted by confidence descending.'
+          }
+        ]
+      },
+      random_forest: {
+        name: 'Random Forest — Multi-label',
+        steps: [
+          {
+            title: 'Same labels (Y) and features (X)',
+            desc: 'Same binary label matrix and 53 user-level features as Logistic Regression.',
+            features: ['user_mean', 'user_count', 'user_std', 'svd_0…svd_49']
+          },
+          {
+            title: 'One-vs-Rest with 200 trees per genre',
+            desc: '<code>MultiOutputClassifier</code> trains one <code>RandomForestClassifier(200 trees)</code> per genre. Each forest votes on whether a user is interested in that genre, using bootstrap sampling and random feature subsets.'
+          },
+          {
+            title: 'Non-linear decision boundaries',
+            desc: 'Unlike Logistic Regression, Random Forest can model interactions — e.g. "users with high user_mean AND certain SVD dims tend to like Sci-Fi". <code>max_depth=12</code> and <code>min_samples_leaf=4</code> prevent overfitting.'
+          },
+          {
+            title: 'Predict',
+            desc: 'Each forest\'s tree majority vote produces a binary label + class probabilities per genre. Results sorted by confidence.'
+          }
+        ]
+      },
+      xgboost: {
+        name: 'XGBoost — Multi-label',
+        steps: [
+          {
+            title: 'Same labels (Y) and features (X)',
+            desc: 'Same binary label matrix and 53 user-level features.',
+            features: ['user_mean', 'user_count', 'user_std', 'svd_0…svd_49']
+          },
+          {
+            title: 'One XGBClassifier per genre',
+            desc: '<code>MultiOutputClassifier</code> trains one <code>XGBClassifier</code> per genre. Each uses <code>eval_metric=logloss</code> — binary cross-entropy minimised via gradient boosting of 200 sequential trees.'
+          },
+          {
+            title: 'Sequential boosting per genre',
+            desc: 'Each classifier builds trees that correct previous residuals. <code>learning_rate=0.05</code> with row/column subsampling adds regularisation. Captures complex user-taste patterns the linear model misses.'
+          },
+          {
+            title: 'Predict',
+            desc: 'Each XGBClassifier outputs P(interested). Binary label threshold = 0.5. Results sorted by confidence.'
+          }
+        ]
+      }
+    };
+
+    function renderPanel(model) {
+      const p  = PIPELINES[model];
+      const el = document.getElementById('panelContent');
+      let html = `<div class="panel-model-name">${p.name}</div>`;
+      p.steps.forEach((s, i) => {
+        html += `<div class="pipeline-step">
+                   <div class="step-num">${i + 1}</div>
+                   <div class="step-body">
+                     <div class="step-title">${s.title}</div>
+                     <div class="step-desc">${s.desc}</div>`;
+        if (s.features) {
+          html += `<div class="features-box"><div class="feat-label">Input features</div>`;
+          s.features.forEach(f => { html += `<span class="feat-tag">${f}</span>`; });
+          html += `</div>`;
+        }
+        html += `</div></div>`;
+        if (i < p.steps.length - 1) html += `<div class="divider"></div>`;
+      });
+      el.innerHTML = html;
+    }
+
+    let panelOpen = false;
+    function togglePanel() {
+      panelOpen = !panelOpen;
+      const panel  = document.getElementById('sidePanel');
+      const toggle = document.getElementById('infoToggle');
+      if (panelOpen) {
+        renderPanel(document.getElementById('model').value);
+        panel.classList.remove('collapsed');
+        toggle.classList.add('open');
+      } else {
+        panel.classList.add('collapsed');
+        toggle.classList.remove('open');
+      }
+    }
+    function onModelChange() {
+      if (panelOpen) renderPanel(document.getElementById('model').value);
+    }
+
+    async function classify() {
+      const userId = document.getElementById('userId').value.trim();
+      const model  = document.getElementById('model').value;
+      const errEl  = document.getElementById('error');
+      const btn    = document.getElementById('btn');
+      const out    = document.getElementById('result');
+
+      errEl.style.display = 'none';
+      if (!userId) { showError('Please enter a User ID.'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div>';
+      out.innerHTML = '';
+
+      try {
+        const res  = await fetch(`/classify?user_id=${userId}&model=${model}`);
+        const data = await res.json();
+        if (!res.ok) { showError(data.detail || 'API error'); return; }
+
+        const toWatch = data.genres.filter(g => g.interested);
+        const badge   = `badge-${model}`;
+
+        if (!toWatch.length) {
+          out.innerHTML = `<div class="result-card">
+            <div class="result-header">
+              <div class="result-title">User ${data.user_id}</div>
+              <span class="model-badge ${badge}">${model.replace(/_/g,' ')}</span>
+            </div>
+            <p style="color:#666;font-size:0.9rem">No genre predictions above the interest threshold for this user.</p>
+          </div>`;
+          return;
+        }
+
+        const top  = toWatch[0];   // already sorted by confidence desc
+        const pct  = (top.confidence * 100).toFixed(0);
+        const icon = GENRE_ICONS[top.genre] || '🎬';
+        const badge_cls = `badge-${model}`;
+
+        out.innerHTML = `
+          <div class="result-card">
+            <div class="result-header">
+              <div class="result-title">User ${data.user_id} — Top Genre to Watch</div>
+              <span class="model-badge ${badge_cls}">${model.replace(/_/g,' ')}</span>
+            </div>
+            <div class="top-genre-display">
+              <div class="top-icon">${icon}</div>
+              <div class="top-name">${top.genre}</div>
+              <div class="conf-bar-wrap" style="margin:14px 0 6px">
+                <div class="conf-bar" style="width:${pct}%"></div>
+              </div>
+              <div class="genre-card-pct">${pct}% confidence</div>
+            </div>
+          </div>`;
+
+      } catch (e) {
+        showError('Could not reach the server.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'What Genres to Watch?';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    document.getElementById('userId').addEventListener('keydown', e => {
+      if (e.key === 'Enter') classify();
+    });
+  </script>
+</body>
+</html>
