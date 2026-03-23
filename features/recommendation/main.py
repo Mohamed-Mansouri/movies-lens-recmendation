@@ -51,6 +51,11 @@ def _load():
     row_means = svd_data["row_means"]
     svd_rec   = (U_sigma @ Vt) + row_means.reshape(-1, 1)
 
+    # Normalise Vt columns for item-item cosine similarity
+    norms  = np.linalg.norm(Vt, axis=0, keepdims=True)
+    norms[norms == 0] = 1
+    Vt_norm = Vt / norms   # (100, n_movies)
+
     def predict_svd(uid, mid):
         if uid in user_index and mid in movie_index:
             return float(np.clip(svd_rec[user_index[uid], movie_index[mid]], 0.5, 5.0))
@@ -102,10 +107,19 @@ def _load():
         ]])
         return float(np.clip(xgb.predict(feat)[0], 0.5, 5.0))
 
+    # O(1) movie lookup for because_you_watched
+    movies_dict = {
+        row["movieId"]: {"title": row["title"], "genres": row["genres"]}
+        for _, row in movies.iterrows()
+    }
+
     state.update(
         movies=movies,
+        movies_dict=movies_dict,
         train_df=train_df,
         all_movies=all_movies,
+        movie_index=movie_index,
+        Vt_norm=Vt_norm,
         valid_users=sorted(train_df["userId"].unique().tolist()),
         predictors={
             "svd":     predict_svd,
@@ -164,3 +178,58 @@ def recommend(
         "model":   model,
         "recommendations": recs.to_dict(orient="records"),
     }
+
+
+@app.get("/because_you_watched")
+def because_you_watched(
+    user_id:  int = Query(..., description="User ID"),
+    n:        int = Query(5,  description="Similar movies per seed"),
+    n_seeds:  int = Query(3,  description="Number of seed movies"),
+):
+    _ensure_fresh()
+
+    train_df    = state["train_df"]
+    movies_dict = state["movies_dict"]
+    Vt_norm     = state["Vt_norm"]
+    movie_index = state["movie_index"]
+    all_movies  = state["all_movies"]
+
+    user_ratings = train_df[train_df["userId"] == user_id]
+    if user_ratings.empty:
+        return {"user_id": user_id, "sections": []}
+
+    # Seeds: movies rated >= 4.0, or fall back to top-rated if none qualify
+    high = user_ratings[user_ratings["rating"] >= 4.0].sort_values("rating", ascending=False)
+    if high.empty:
+        high = user_ratings.sort_values("rating", ascending=False)
+    seeds = high.head(n_seeds)[["movieId", "rating"]].values.tolist()
+
+    seen = set(user_ratings["movieId"])
+    sections = []
+
+    for seed_mid, seed_rating in seeds:
+        seed_mid = int(seed_mid)
+        if seed_mid not in movie_index or seed_mid not in movies_dict:
+            continue
+
+        seed_vec = Vt_norm[:, movie_index[seed_mid]]
+        sims     = Vt_norm.T @ seed_vec   # cosine similarity to every movie
+
+        ranked = sorted(
+            [(mid, float(sims[movie_index[mid]]))
+             for mid in all_movies
+             if mid not in seen and mid in movie_index],
+            key=lambda x: x[1], reverse=True
+        )[:n]
+
+        sections.append({
+            "seed_title":  movies_dict[seed_mid]["title"],
+            "seed_rating": float(seed_rating),
+            "similar": [
+                {**movies_dict[mid], "movieId": mid, "similarity": round(score, 3)}
+                for mid, score in ranked
+                if mid in movies_dict
+            ],
+        })
+
+    return {"user_id": user_id, "sections": sections}

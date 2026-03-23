@@ -176,8 +176,20 @@ For each (userId, movieId) training pair:
 | `GET /` | Serves the HTML UI |
 | `GET /users` | Returns list of valid user IDs |
 | `GET /recommend?user_id=42&model=svd&n=10` | Returns top-N recommendations |
+| `GET /because_you_watched?user_id=42&n=5&n_seeds=3` | Returns similar movies based on user's highest-rated films |
 
 **Model values**: `svd` · `knn` · `xgboost`
+
+### Because You Watched
+
+Finds movies the user rated ≥ 4.0 (up to `n_seeds`, falls back to top-rated if none qualify), then for each seed computes **item-item cosine similarity** using the SVD `Vt` column vectors.
+
+```
+Vt columns normalised → seed_vec = Vt_norm[:, movie_idx]
+similarities = Vt_norm.T @ seed_vec   # dot product = cosine sim
+```
+
+Returns the top-N most similar unseen movies per seed. Uses SVD item vectors regardless of which recommendation model the user selects — Vt is always loaded.
 
 ---
 

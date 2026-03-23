@@ -162,6 +162,36 @@
     .rating-label { font-size: 0.75rem; color: #aaa; margin-top: 5px; }
     .rating-label span { color: #c084fc; font-weight: 700; }
 
+    /* ── Because you watched ── */
+    .byw-section { width: 100%; margin-top: 40px; }
+    .byw-row     { margin-bottom: 32px; }
+    .byw-header  { font-size: 0.8rem; color: #888; margin-bottom: 12px; letter-spacing: 0.02em; }
+    .byw-header strong { color: #e0e0e0; font-size: 0.95rem; }
+    .byw-header .byw-rating { color: #c084fc; font-weight: 700; margin-left: 6px; }
+    .byw-strip {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: #2a2a45 transparent;
+    }
+    .byw-strip::-webkit-scrollbar { height: 4px; }
+    .byw-strip::-webkit-scrollbar-thumb { background: #2a2a45; border-radius: 2px; }
+    .byw-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a45;
+      border-radius: 10px;
+      padding: 14px;
+      min-width: 170px;
+      max-width: 170px;
+      flex-shrink: 0;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .byw-card:hover { border-color: #7c6af7; transform: translateY(-2px); }
+    .byw-card-title  { font-size: 0.83rem; font-weight: 600; color: #fff; margin-bottom: 6px; line-height: 1.4; }
+    .byw-card-genres { font-size: 0.71rem; color: #888; }
+
     .spinner {
       display: none;
       width: 20px; height: 20px;
@@ -490,10 +520,16 @@
       out.innerHTML = '';
 
       try {
-        const res  = await fetch(`./recommend?user_id=${userId}&model=${model}&n=${n}`);
-        const data = await res.json();
+        const [res, bywRes] = await Promise.all([
+          fetch(`./recommend?user_id=${userId}&model=${model}&n=${n}`),
+          fetch(`./because_you_watched?user_id=${userId}`),
+        ]);
+
+        const data    = await res.json();
+        const bywData = await bywRes.json();
         if (!res.ok) { showError(data.detail || 'API error'); return; }
 
+        // ── Main recommendations grid ──
         const badgeClass = `badge-${model}`;
         let html = `<div class="model-badge ${badgeClass}">${model}</div>
                     <div class="movie-grid">`;
@@ -510,8 +546,32 @@
               <div class="rating-label">Predicted: <span>${m.predicted_rating}</span> / 5</div>
             </div>`;
         });
-
         html += '</div>';
+
+        // ── Because you watched ──
+        const sections = bywData.sections || [];
+        if (sections.length) {
+          html += '<div class="byw-section">';
+          sections.forEach(s => {
+            const stars = '★'.repeat(Math.round(s.seed_rating)) + '☆'.repeat(5 - Math.round(s.seed_rating));
+            html += `
+              <div class="byw-row">
+                <div class="byw-header">
+                  Because you watched <strong>${s.seed_title}</strong>
+                  <span class="byw-rating">${stars} ${s.seed_rating}</span>
+                </div>
+                <div class="byw-strip">
+                  ${s.similar.map(m => `
+                    <div class="byw-card">
+                      <div class="byw-card-title">${m.title}</div>
+                      <div class="byw-card-genres">${(m.genres || '').replace(/\|/g, ' · ')}</div>
+                    </div>`).join('')}
+                </div>
+              </div>`;
+          });
+          html += '</div>';
+        }
+
         out.innerHTML = html;
 
       } catch (e) {
